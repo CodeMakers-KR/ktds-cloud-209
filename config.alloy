@@ -1,0 +1,76 @@
+// 로그 레벨
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+// Prometheus로 메트릭 전송
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://host.docker.internal:9090/api/v1/write"
+  }
+}
+
+// Loki로 로그 전송
+loki.write "default" {
+  endpoint {
+    url = "http://host.docker.internal:3100/loki/api/v1/push"
+  }
+}
+
+// Docker 컨테이너 자동 발견
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+// 라벨 재작성 규칙 정의
+discovery.relabel "containers" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+// 로그 수집
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.containers.targets
+  forward_to       = [loki.write.default.receiver]
+  relabel_rules    = discovery.relabel.containers.rules
+  refresh_interval = "5s"
+}
+
+
+
+// 서비스 로그 수집 설정
+// 1. 로그 파일 경로 정의: 서비스 로그 파일 위치 지정
+local.file_match "services_logs" {
+  path_targets = [{ __path__ = "/var/log/*.log" }]  // 서비스 로그 파일 경로
+}
+
+// 2. 로그 파일 읽기: 지정된 경로에서 로그 파일을 읽어 수집
+loki.source.file "services_sources" {
+  targets = local.file_match.services_logs.targets  // 위에서 정의한 로그 파일 경로 사용
+  forward_to = [loki.process.services_labels.receiver]  // 읽은 로그를 처리 단계로 전달
+}
+
+// 3. 로그 처리: 로그에 레이블 추가 및 Loki로 전송 준비
+loki.process "services_labels" {
+  forward_to = [loki.write.default.receiver]  // 처리된 로그를 Loki로 전송
+  
+  stage.static_labels {
+    values = {
+      "job" = "services",
+      "service" = "backend",
+    }
+  }
+}
