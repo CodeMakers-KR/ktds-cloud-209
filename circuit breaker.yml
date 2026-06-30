@@ -1,0 +1,21 @@
+# CircuitBreaker 정책 설정.
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 4s
+        cancel-running-future: false
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        # 모니터링 중인 Request, Response가 50% 이상 실패하면 circuitbreaker를 오픈시킨다.
+        failure-rate-threshold: 50 
+        # circuitbreaker open 유지 시간 설정 (10000ms ==> 10s)
+        wait-duration-in-open-state: 10000
+        # circuitbreaker가 모니터링 할 request, response의 단위.
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+    instances:
+      gatewayCircuitBreaker:
+        base-config: default
