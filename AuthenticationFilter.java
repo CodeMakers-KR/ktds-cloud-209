@@ -28,6 +28,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+// 인증을 담당할 필터
+// /login 으로 요청했을 때 동작하는 클래스.
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
 	private String secretKey;
@@ -35,17 +37,17 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
 	public AuthenticationFilter(UserService userService
 					, AuthenticationManager authenticationManager
-					, String secretKey) {
+					, String secretKey
+					) {
 		this.userService = userService;
 		this.secretKey = secretKey;
 		super.setAuthenticationManager(authenticationManager);
 	}
-
-	/** 인증을 수행하기 위한 토큰을 생성함. */
+	
+	// "/login" 을 처리할 메소드.
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException {
-
 		try {
 			Map<String, String> creds = new ObjectMapper().readValue(request.getInputStream(), HashMap.class);
 			String email = creds.get("email");
@@ -60,12 +62,9 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
 	}
-
-	/**
-	 * attemptAuthentication에서 인증이 성공 할 경우의 후 처리 작업 진행. 예> JWT 발행.
-	 */
+	
+	// 인증(로그인)에 성공했을 때 동작.
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authResult) throws IOException, ServletException {
@@ -90,8 +89,6 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	 
 	    response.addHeader("token", token);
 	    response.addHeader("email", userDetail.getUsername());
-
-
 	}
-
+	
 }
