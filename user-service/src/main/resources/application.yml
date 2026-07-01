@@ -1,0 +1,53 @@
+logging:
+  level: 
+    root: debug
+    com.example.userservice.client: DEBUG
+  file:
+    name: /Users/codemakers/apps/log/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+
+server:
+  port: 0
+
+  
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+  application:
+    name: user-service
+  datasource:
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    url: jdbc:oracle:thin:@localhost:1521:XE
+    username: SHOP_USERS
+    password: shopUsers1234
+
+
+mybatis:
+  config-location: classpath:mybatis/mybatis-config.xml
+  mapper-locations: classpath:com/example/userservice/**/mapper/*Mapper.xml
+  type-aliases-package: com.example.userservice.vo
+
+# CircuitBreaker 정책 설정.
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 2s
+        cancel-running-future: false
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        # 모니터링 중인 Request, Response가 50% 이상 실패하면 circuitbreaker를 오픈시킨다.
+        failure-rate-threshold: 50 
+        # circuitbreaker open 유지 시간 설정 (10000ms ==> 10s)
+        wait-duration-in-open-state: 10000
+        # circuitbreaker가 모니터링 할 request, response의 단위.
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10

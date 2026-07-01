@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.orderservice.dao.OrderDao">
+    
+    <!-- 
+     서버 실행 순서
+     1. service-discovery
+     2. api-gateway-service
+     3. *-service
+     -->
+    
+    <insert id="insertNewOrder"
+            parameterType="RequestOrderVO">
+        <selectKey resultType="string" order="BEFORE" keyProperty="orderId">
+            SELECT 'ORD-' || TO_CHAR(SYSDATE, 'YYYYMMDD-') || LPAD(SEQ_ORDERS_PK.NEXTVAL, 6, '0')
+              FROM DUAL
+        </selectKey>
+        INSERT INTO ORDERS 
+         (ORDER_ID
+         , ITEM_ID
+         , ITEM_ORDER_COUNT
+         , ITEM_UNIT_PRICE
+         , ORDER_AMOUNT_PRICE
+         , USER_ID
+         , CREATE_AT) 
+        VALUES
+         (#{orderId}
+        , #{itemId}
+        , #{itemOrderCount}
+        , #{itemUnitPrice}
+        , #{itemUnitPrice} * #{itemOrderCount}
+        , #{userId}
+        , SYSDATE)
+    </insert>
+
+    <select id="selectOneOrderByOrderId"
+            parameterType="string"
+            resultType="ResponseOrderVO">
+        SELECT ORDER_ID
+             , ITEM_ID
+             , ITEM_ORDER_COUNT
+             , ITEM_UNIT_PRICE
+             , ORDER_AMOUNT_PRICE
+             , USER_ID
+             , TO_CHAR(CREATE_AT, 'YYYY-MM-DD HH24:MI:SS') AS CREATE_AT 
+        FROM ORDERS
+       WHERE ORDER_ID = #{_parameter}
+    </select>
+      
+    <select id="selectAllOrdersByUserId"
+		      parameterType="string"
+		      resultType="ResponseOrderVO">
+        SELECT ORDER_ID
+             , ITEM_ID
+             , ITEM_ORDER_COUNT
+	         , ITEM_UNIT_PRICE
+	         , ORDER_AMOUNT_PRICE
+	         , USER_ID
+	         , TO_CHAR(CREATE_AT, 'YYYY-MM-DD HH24:MI:SS') AS CREATE_AT 
+	      FROM ORDERS
+	     WHERE USER_ID = #{_parameter}
+	</select>
+	
+	<delete id="deleteOrder"
+	        parameterType="string">
+	    DELETE
+	      FROM ORDERS
+	     WHERE ORDER_ID = #{_parameter}
+	</delete>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+

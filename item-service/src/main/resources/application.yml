@@ -1,0 +1,27 @@
+logging:
+  level: 
+    root: debug
+  file:
+    name: /Users/codemakers/apps/log/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+
+server:
+  port: 0
+
+spring:
+  application:
+    name: item-service
+  datasource:
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    url: jdbc:oracle:thin:@localhost:1521:XE
+    username: SHOP_ITEMS
+    password: shopItems1234
+
+mybatis:
+  config-location: classpath:mybatis/mybatis-config.xml
+  mapper-locations: classpath:com/example/itemservice/**/mapper/*Mapper.xml
+  type-aliases-package: com.example.itemservice.vo

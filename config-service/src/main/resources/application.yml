@@ -1,0 +1,47 @@
+logging:
+  level: 
+    root: debug
+  file:
+    name: /Users/codemakers/apps/log/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+
+server:
+  port: 8888
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    password: guest
+    username: guest
+  application:
+    name: config-service
+  profiles:
+    active:
+    - native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations:
+          - classpath:/config
+          
+          
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+        - health
+        - beans
+        - refresh
+        - info
+        - busrefresh
+        - circuitbreakers # circuit breaker의 상태 모니터링 (open, closed, half-open)
+        - circuitbreakerevents # circuit breaker의 sliding window 모니터링 결과 (실패, 성공 이력)
+        - metrics
+        - prometheus

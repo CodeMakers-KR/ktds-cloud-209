@@ -1,0 +1,178 @@
+logging:
+  level: 
+    root: info
+  file:
+    name: /Users/codemakers/apps/log/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway-service
+# Routing 설정 (react 처럼..)
+  cloud:
+    circuitbreaker:
+      resilience4j:
+        enabled: true
+    gateway:
+      server:
+        webflux:
+          routes:
+          # 각 서비스들의 actuator를 호출하기 위한 route 작성.
+          # /user-service/actuator/health ==> USER-SERVICE/actuator/health
+          - id: user-service-actuator-all
+            uri: lb://USER-SERVICE
+            predicates:
+            - Path=/user-service/actuator
+            filters:
+            - RewritePath=/user-service/actuator, /actuator
+          - id: order-service-actuator-all
+            uri: lb://ORDER-SERVICE
+            predicates:
+            - Path=/order-service/actuator
+            filters:
+            - RewritePath=/order-service/actuator, /actuator
+          - id: item-service-actuator-all
+            uri: lb://ITEM-SERVICE
+            predicates:
+            - Path=/item-service/actuator
+            filters:
+            - RewritePath=/item-service/actuator, /actuator
+          - id: first-test-api-service-actuator-all
+            uri: lb://FIRST-TEST-API-SERVICE
+            predicates:
+            - Path=/first-service/actuator
+            filters:
+            - RewritePath=/first-service/actuator, /actuator
+          - id: second-test-api-service-actuator-all
+            uri: lb://SECOND-TEST-API-SERVICE
+            predicates:
+            - Path=/second-service/actuator
+            filters:
+            - RewritePath=/second-service/actuator, /actuator
+            
+          
+          - id: user-service-actuator
+            uri: lb://USER-SERVICE
+            predicates:
+            - Path=/user-service/actuator/**
+            filters:
+            - RewritePath=/user-service/actuator/(?<segment>.*), /actuator/$\{segment}
+          - id: order-service-actuator
+            uri: lb://ORDER-SERVICE
+            predicates:
+            - Path=/order-service/actuator/**
+            filters:
+            - RewritePath=/order-service/actuator/(?<segment>.*), /actuator/$\{segment}
+          - id: item-service-actuator
+            uri: lb://ITEM-SERVICE
+            predicates:
+            - Path=/item-service/actuator/**
+            filters:
+            - RewritePath=/item-service/actuator/(?<segment>.*), /actuator/$\{segment}
+          - id: first-test-api-service-actuator
+            uri: lb://FIRST-TEST-API-SERVICE
+            predicates:
+            - Path=/first-service/actuator/**
+            filters:
+            - RewritePath=/first-service/actuator/(?<segment>.*), /actuator/$\{segment}
+          - id: second-test-api-service-actuator
+            uri: lb://SECOND-TEST-API-SERVICE
+            predicates:
+            - Path=/second-service/actuator/**
+            filters:
+            - RewritePath=/second-service/actuator/(?<segment>.*), /actuator/$\{segment}
+          - id: user-service-login
+            uri: lb://USER-SERVICE
+            predicates:
+            - Path=/user-service/login
+            filters:
+            - RewritePath=/user-service/login, /login
+          - id: user-service-regist
+            uri: lb://USER-SERVICE
+            predicates:
+            - Path=/user-service/users
+            - Method=POST
+          - id: user-service
+            uri: lb://USER-SERVICE
+            predicates:
+              - Path=/user-service/**
+            filters:
+            - AuthorizationHeaderFilter
+            - name: CircuitBreaker
+              args:
+                name: gatewayCircuitBreaker
+                fallbackUri: forward:/fallback/failure
+          - id: item-service
+            uri: lb://ITEM-SERVICE
+            predicates:
+              - Path=/item-service/**
+            filters:
+            - name: CircuitBreaker
+              args:
+                name: gatewayCircuitBreaker
+                fallbackUri: forward:/fallback/failure
+          - id: order-service
+            uri: lb://ORDER-SERVICE
+            predicates:
+              - Path=/order-service/**
+            filters:
+            - AuthorizationHeaderFilter
+            - name: CircuitBreaker
+              args:
+                name: gatewayCircuitBreaker
+                fallbackUri: forward:/fallback/failure
+          - id: first-service
+            predicates:
+            - Path=/first-service/**
+            uri: lb://FIRST-TEST-API-SERVICE
+            filters:
+            - AddRequestHeader=f-request, 202606101531
+            - AddResponseHeader=api-response, token value
+            - name: CircuitBreaker
+              args:
+                name: gatewayCircuitBreaker
+                fallbackUri: forward:/fallback/failure
+          - id: second-service
+            predicates:
+            - Path=/second-service/**
+            uri: http://localhost:8082/
+            filters:
+            - AddRequestHeader=s-request, 202606101531
+            - AddResponseHeader=api-response, token value
+            - name: CircuitBreaker
+              args:
+                name: gatewayCircuitBreaker
+                fallbackUri: forward:/fallback/failure
+
+# CircuitBreaker 정책 설정.
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 4s
+        cancel-running-future: false
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        # 모니터링 중인 Request, Response가 50% 이상 실패하면 circuitbreaker를 오픈시킨다.
+        failure-rate-threshold: 50 
+        # circuitbreaker open 유지 시간 설정 (10000ms ==> 10s)
+        wait-duration-in-open-state: 10000
+        # circuitbreaker가 모니터링 할 request, response의 단위.
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+    instances:
+      gatewayCircuitBreaker:
+        base-config: default
+        
+        
+        
+        

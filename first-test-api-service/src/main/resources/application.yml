@@ -1,0 +1,17 @@
+logging:
+  level: 
+    root: debug
+  file:
+    name: /Users/codemakers/apps/log/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+
+spring:
+  application:
+    name: first-test-api-service
+    
+server:
+  port: 0
