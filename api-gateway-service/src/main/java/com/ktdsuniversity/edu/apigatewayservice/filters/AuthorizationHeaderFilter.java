@@ -102,7 +102,7 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
 	private Mono<Void> onError(ServerWebExchange exchange, String string, HttpStatus httpStatus) {
 		ServerHttpResponse response = exchange.getResponse();
 		response.setStatusCode(httpStatus);
-		byte[] bytes = "JWT가 올바르지 않습니다.".getBytes();
+		byte[] bytes = string.getBytes();
 		DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
 		return response.writeWith(Flux.just(buffer));
 	}
